@@ -51,10 +51,16 @@ Flags:`)
 		os.Exit(1)
 	}
 
+	sampleIdx, ok := clampSampleIndex(*idx, len(prof.SampleType))
+	if !ok {
+		fmt.Fprintf(os.Stderr, "flamectl: -sample %d is out of range (profile has %d sample types); using 0\n",
+			*idx, len(prof.SampleType))
+	}
+
 	if *listOnly {
 		for i, st := range prof.SampleType {
 			marker := " "
-			if i == *idx {
+			if i == sampleIdx {
 				marker = "*"
 			}
 			fmt.Printf("%s %d  %s [%s]\n", marker, i, st.Type, st.Unit)
@@ -62,7 +68,7 @@ Flags:`)
 		return
 	}
 
-	root, unit, err := buildTree(prof, *idx, *focus)
+	root, unit, err := buildTree(prof, sampleIdx, *focus)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "flamectl: build tree:", err)
 		os.Exit(1)
@@ -84,7 +90,7 @@ Flags:`)
 	opts.subtitle = fmt.Sprintf("%s · %d frames · %s sample type",
 		timeNanosT(prof.TimeNanos).toRFC(),
 		countNodes(root),
-		sampleTypeLabel(prof, *idx),
+		sampleTypeLabel(prof, sampleIdx),
 	)
 
 	var w io.Writer
@@ -141,6 +147,17 @@ func loadProfile(src string) (*profile.Profile, string, error) {
 		p, err := profile.Parse(f)
 		return p, src, err
 	}
+}
+
+// clampSampleIndex resolves a user-supplied -sample value against a
+// profile that has n sample types. A negative index would panic on the
+// SampleType slice and a too-large one silently mislabels the chart, so
+// out-of-range values fall back to 0 and ok is returned false.
+func clampSampleIndex(idx, n int) (resolved int, ok bool) {
+	if idx >= 0 && idx < n {
+		return idx, true
+	}
+	return 0, false
 }
 
 func countNodes(n *node) int {
