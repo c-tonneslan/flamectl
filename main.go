@@ -20,6 +20,7 @@ func main() {
 		out       = flag.String("o", "flame.svg", "output SVG path; - for stdout")
 		idx       = flag.Int("sample", 0, "sample-value index to aggregate (default 0, usually inuse_objects, cpu samples, etc.)")
 		focus     = flag.String("focus", "", "only include stacks containing this substring (case-insensitive)")
+		ignore    = flag.String("ignore", "", "drop stacks containing this substring (case-insensitive)")
 		title     = flag.String("title", "", "override the title shown on the chart")
 		listOnly  = flag.Bool("list-samples", false, "print the available sample types in the profile and exit")
 	)
@@ -68,7 +69,7 @@ Flags:`)
 		return
 	}
 
-	root, unit, err := buildTree(prof, sampleIdx, *focus)
+	root, unit, err := buildTree(prof, sampleIdx, *focus, *ignore)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "flamectl: build tree:", err)
 		os.Exit(1)
@@ -83,6 +84,9 @@ Flags:`)
 		t = source
 		if *focus != "" {
 			t += "  (focus: " + *focus + ")"
+		}
+		if *ignore != "" {
+			t += "  (ignore: " + *ignore + ")"
 		}
 	}
 

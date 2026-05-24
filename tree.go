@@ -54,7 +54,7 @@ func (n *node) sortedChildren() []*node {
 // tree. We pick the sample type to aggregate by index: 0 by default
 // (which is `samples` for cpu profiles, `objects` for heap, etc.) or
 // whatever the caller specified.
-func buildTree(prof *profile.Profile, sampleIdx int, focus string) (*node, string, error) {
+func buildTree(prof *profile.Profile, sampleIdx int, focus, ignore string) (*node, string, error) {
 	if sampleIdx >= len(prof.SampleType) {
 		sampleIdx = 0
 	}
@@ -86,6 +86,9 @@ func buildTree(prof *profile.Profile, sampleIdx int, focus string) (*node, strin
 			}
 		}
 		if focus != "" && !stackContains(frames, focus) {
+			continue
+		}
+		if ignore != "" && stackContains(frames, ignore) {
 			continue
 		}
 		cursor := root
